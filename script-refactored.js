@@ -8,14 +8,14 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 
-///////////////////////////////////////////////// Wykład 249 -Refactoring for Project Architercture
-console.log('-------Wykład 249 - Refactoring for Project Architercture');
+// ///////////////////////////////////////////////// Wykład 249 -Refactoring for Project Architercture
+// console.log('-------Wykład 249 - Refactoring for Project Architercture');
 
-///////////////////////////////////////////////// Wykład 250 - Creating a New Workout
-console.log('-------Wykład 250 - Creating a New Workout');
+// ///////////////////////////////////////////////// Wykład 250 - Creating a New Workout
+// console.log('-------Wykład 250 - Creating a New Workout');
 
-///////////////////////////////////////////////// Wykład 251 - Rendering Workouts
-console.log('-------Wykład 251 - Rendering Workouts');
+// ///////////////////////////////////////////////// Wykład 251 - Rendering Workouts
+// console.log('-------Wykład 251 - Rendering Workouts');
 
 // WYKŁAD w całym przerobionym do tej pory kodem, oraz dalsze wykłady W NOWYM PLIKU script-refactored.js !!!
 
@@ -341,6 +341,11 @@ class App {
     this.#workouts = data;
     this.#workouts.forEach(work => this._renderWorkout(work));
     // this.#workouts.forEach(work => this._renderWorkoutMarker(work)); // tutaj kod nie zadziała bo mapa jeszcze nie jest wgrana!
+  }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload(); // programowalne odświezanie strony
   }
 }
 
