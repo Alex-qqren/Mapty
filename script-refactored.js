@@ -25,6 +25,7 @@ class Workout {
   date = new Date();
   // warto skrzystać z bilbiotek do tworzenia nowych id
   id = (Date.now() + '').slice(-10); // ostatnie 10 liczb
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; // [latitude, longitude]
@@ -40,6 +41,10 @@ class Workout {
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()} `;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -87,15 +92,24 @@ class Cycling extends Workout {
 
 class App {
   #map;
+  #mapZoomLvl = 13;
   #mapEvent;
   #workouts = [];
   constructor() {
+    // Get user's position
     this._getPosition();
 
+    // Get data from local storage
+    this._getLocalStorage();
+
+    // handlery
     form.addEventListener('submit', this._newWorkout.bind(this)); // ma wskazywać na instancję App (app)
 
     // zmiana pola formularza w zalezności od opcji: running, lub cycling
     inputType.addEventListener('change', this._toggleElevationField); // nie uzywa nigdzie this więc nie trzeba go maulanie przypisaywać do app przy pomocy bind()
+
+    // wykład 253
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -112,13 +126,17 @@ class App {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
     const coords = [latitude, longitude];
-    this.#map = L.map('map').setView(coords, 16);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLvl);
     L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
 
+    // handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
+
+    // rendering markers for local storage data
+    this.#workouts.forEach(work => this._renderWorkoutMarker(work));
   }
 
   _showForm(mapE) {
@@ -195,7 +213,7 @@ class App {
 
     // add the new object to the workout array:
     this.#workouts.push(workout);
-    console.log(workout);
+    // console.log(workout);
 
     // Render workout on map as marker:
     this._renderWorkoutMarker(workout);
@@ -205,6 +223,9 @@ class App {
 
     // Hide the form and clear input fields:
     this._hideForm();
+
+    // Set local storage to all workouts
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -274,6 +295,52 @@ class App {
     </li>`;
 
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToPopup(e) {
+    // wybieramy el workout
+    const workoutEl = e.target.closest('.workout');
+    // console.log(workoutEl);
+
+    if (!workoutEl) return;
+
+    // szukamy wybrany workoutEl w tablicy obiektów #workouts (linijka 92)
+    const workout = this.#workouts.find(
+      work => work.id === workoutEl.dataset.id
+    );
+    // console.log(workout);
+
+    // najazd ekranu na wybrany workout (metoda Leaflet - setView() )
+    this.#map.setView(workout.coords, this.#mapZoomLvl, {
+      animate: true,
+      pan: { duration: 1 },
+    });
+
+    // using the public interface
+    // workout.click();
+    // workout.click() -powoduje bug dla obiektów workout pochodzących z local storage. Jako ze obiekty te są zamieniane na ciąg a potem odtwarzane z ciągów, tracą one swoje powiązanie prototypowe (przez co NIE DZIEDZICZĄ metod z prototypów!!! ). Jest to zachowanie na które nalezy brać poprawkę przy OOP i korzystaniu z local storage.
+  }
+
+  // wykład 254
+
+  // localStorage - API przeznaczona dla małych ilości danych
+  // stringify() - zamienia dowolny obiekt na ciąg
+  // parse() - odwrotność stringify()
+
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  // robimy odwrotność tego co w _setLocalStorage
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    // console.log(data);
+
+    if (!data) return;
+
+    this.#workouts = data;
+    this.#workouts.forEach(work => this._renderWorkout(work));
+    // this.#workouts.forEach(work => this._renderWorkoutMarker(work)); // tutaj kod nie zadziała bo mapa jeszcze nie jest wgrana!
   }
 }
 
